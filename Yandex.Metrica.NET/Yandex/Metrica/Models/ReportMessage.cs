@@ -1693,7 +1693,8 @@ namespace Yandex.Metrica.Models
 					EVENT_OPEN,
 					EVENT_UPDATE,
 					EVENT_PERMISSIONS,
-					EVENT_APP_FEATURES
+					EVENT_APP_FEATURES,
+					EVENT_PROFILE
 				}
 
 				public enum EncryptionMode
@@ -2695,6 +2696,9 @@ namespace Yandex.Metrica.Models
 				[DataMember]
 				public EncryptionMode? encryption_mode { get; set; }
 
+				[DataMember]
+				public byte[] profile_id { get; set; }
+
 				public static Event Deserialize(Stream stream)
 				{
 					Event obj = new Event();
@@ -2797,6 +2801,9 @@ namespace Yandex.Metrica.Models
 						case 96:
 							instance.encryption_mode = (EncryptionMode)ProtocolParser.ReadUInt64(stream);
 							continue;
+						case 114:
+							instance.profile_id = ProtocolParser.ReadBytes(stream);
+							continue;
 						case -1:
 							return instance;
 						}
@@ -2874,6 +2881,9 @@ namespace Yandex.Metrica.Models
 							continue;
 						case 96:
 							instance.encryption_mode = (EncryptionMode)ProtocolParser.ReadUInt64(stream);
+							continue;
+						case 114:
+							instance.profile_id = ProtocolParser.ReadBytes(stream);
 							continue;
 						}
 						Key key = ProtocolParser.ReadKey((byte)num2, stream);
@@ -2955,6 +2965,9 @@ namespace Yandex.Metrica.Models
 						case 96:
 							instance.encryption_mode = (EncryptionMode)ProtocolParser.ReadUInt64(stream);
 							continue;
+						case 114:
+							instance.profile_id = ProtocolParser.ReadBytes(stream);
+							continue;
 						}
 						Key key = ProtocolParser.ReadKey((byte)num2, stream);
 						if (key.Field == 0)
@@ -3030,6 +3043,11 @@ namespace Yandex.Metrica.Models
 					{
 						stream.WriteByte(96);
 						ProtocolParser.WriteUInt64(stream, (ulong)instance.encryption_mode.Value);
+					}
+					if (instance.profile_id != null)
+					{
+						stream.WriteByte(114);
+						ProtocolParser.WriteBytes(stream, instance.profile_id);
 					}
 					ProtocolParser.Stack.Push(memoryStream);
 				}

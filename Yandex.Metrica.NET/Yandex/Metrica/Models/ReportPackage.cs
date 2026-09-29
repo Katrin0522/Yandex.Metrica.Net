@@ -27,6 +27,8 @@ namespace Yandex.Metrica.Models
 
 		public long Length => _rawStream?.Length ?? Memory.ActiveBox.Storage.Length(Key);
 
+		public string EventTypes => (_reportMessage == null) ? "persisted" : string.Join(",", _reportMessage.sessions.SelectMany((ReportMessage.Session session) => session.events).Select((ReportMessage.Session.Event item) => item.type.ToString()).Distinct());
+
 		public ReportPackage(string urlParameters, IEnumerable<ReportMessage.Session> sessions)
 		{
 			Key = string.Format(Memory.ActiveBox.KeyFormat, Guid.NewGuid());

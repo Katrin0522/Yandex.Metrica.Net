@@ -42,6 +42,9 @@ namespace Yandex.Metrica
 
 		public class YandexMetricaConfig
 		{
+			/// <summary>Optional diagnostic sink. Network requests, HTTP responses and delivery failures are written here.</summary>
+			public Action<string> TraceHandler { get; set; }
+
 			public Guid ApiKey => InternalConfig.ApiKey;
 
 			public Version LibraryVersion => InternalConfig.LibraryVersion;
@@ -316,6 +319,25 @@ namespace Yandex.Metrica
 			catch (Exception)
 			{
 			}
+		}
+
+		public static void SetUserProfileID(string userProfileId)
+		{
+			InternalConfig.UserProfileId = userProfileId;
+			InternalConfig.Snapshot();
+		}
+
+		public static void ReportUserProfile(UserProfile profile)
+		{
+			if (profile == null)
+			{
+				throw new ArgumentNullException("profile");
+			}
+			if (profile.IsEmpty)
+			{
+				return;
+			}
+			Report(EventFactory.Create(ReportMessage.Session.Event.EventType.EVENT_PROFILE, profile.ToProtobuf()));
 		}
 
 		public static void Activate(string apiKey)

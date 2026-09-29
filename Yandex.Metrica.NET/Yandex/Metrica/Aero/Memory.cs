@@ -47,7 +47,7 @@ namespace Yandex.Metrica.Aero
 			try
 			{
 				Type typeFromHandle = typeof(TValue);
-				if (!Attribute.IsDefined(typeFromHandle, typeof(DataContractAttribute)) && !Attribute.IsDefined(typeFromHandle, typeof(CollectionDataContractAttribute)))
+				if (!System.Attribute.IsDefined(typeFromHandle, typeof(DataContractAttribute)) && !System.Attribute.IsDefined(typeFromHandle, typeof(CollectionDataContractAttribute)))
 				{
 					return (TValue)Activator.CreateInstance(typeFromHandle, constructorArgs);
 				}
@@ -86,7 +86,7 @@ namespace Yandex.Metrica.Aero
 			try
 			{
 				Type type = item.GetType();
-				if (!Attribute.IsDefined(type, typeof(DataContractAttribute)) && !Attribute.IsDefined(type, typeof(CollectionDataContractAttribute)))
+			if (!System.Attribute.IsDefined(type, typeof(DataContractAttribute)) && !System.Attribute.IsDefined(type, typeof(CollectionDataContractAttribute)))
 				{
 					return;
 				}

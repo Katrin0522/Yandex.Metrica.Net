@@ -90,6 +90,9 @@ namespace Yandex.Metrica.Models
 		[DataMember]
 		public string ReportUrl { get; set; }
 
+		[DataMember]
+		public string UserProfileId { get; set; }
+
 		internal bool IsNew { get; private set; }
 
 		internal DataContractJsonSerializerSettings JsonSerializerSettings { get; set; }

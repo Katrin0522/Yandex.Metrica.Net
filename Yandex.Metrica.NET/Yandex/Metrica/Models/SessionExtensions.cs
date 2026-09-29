@@ -51,6 +51,7 @@ namespace Yandex.Metrica.Models
 					obj.name = obj.name.Truncate(1000, ref bytesTruncated);
 					obj.value = obj.value.Truncate(50000, ref bytesTruncated);
 					obj.bytes_truncated = bytesTruncated;
+					obj.profile_id = (string.IsNullOrEmpty(Config.Global.UserProfileId) ? null : Encoding.UTF8.GetBytes(Config.Global.UserProfileId));
 					obj.time = currentUnixTime - session.session_desc.start_time.timestamp;
 					obj.number = session.EventCounter++;
 					session.events.Add(obj);

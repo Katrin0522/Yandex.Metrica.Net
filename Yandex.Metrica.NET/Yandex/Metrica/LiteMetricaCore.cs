@@ -165,7 +165,7 @@ namespace Yandex.Metrica
 				ReportPackage[] array = ReportPackages.ToArray();
 				foreach (ReportPackage reportPackage in array)
 				{
-					if (!Config.Global.OfflineMode && TryPostOrIgnore(reportPackage))
+					if (!Config.Global.OfflineMode && TryPost(reportPackage))
 					{
 						ReportPackages.Remove(reportPackage);
 						reportPackage.Fade();
@@ -180,7 +180,7 @@ namespace Yandex.Metrica
 			}
 		}
 
-		private static bool TryPostOrIgnore(ReportPackage package)
+		private static bool TryPost(ReportPackage package)
 		{
 			try
 			{
@@ -191,13 +191,19 @@ namespace Yandex.Metrica
 				HttpResponseMessage result = package.PostAsync().Result;
 				if (result == null)
 				{
+					MetricaTrace.Write("REPORT was not delivered; package remains queued.");
 					return false;
 				}
-				return result.IsSuccessStatusCode || !IsValidRequestByStatusCode(result.StatusCode);
+				if (!result.IsSuccessStatusCode)
+				{
+					MetricaTrace.Write("REPORT rejected with HTTP " + (int)result.StatusCode + "; package remains queued.");
+				}
+				return result.IsSuccessStatusCode;
 			}
-			catch (Exception)
+			catch (Exception exception)
 			{
-				return true;
+				MetricaTrace.Write("REPORT send exception; package remains queued: " + exception);
+				return false;
 			}
 		}
 

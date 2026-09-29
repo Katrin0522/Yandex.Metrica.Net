@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.Serialization.Json;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Yandex.Metrica.Aides;
@@ -30,7 +31,7 @@ namespace Yandex.Metrica
 
 		public static async Task<HttpResponseMessage> PostAsync(this ReportPackage package)
 		{
-			return await PostAsync(new Uri(Config.Global.ReportUrl + "/report?".GlueGetList(new Dictionary<string, object>
+			Uri uri = new Uri(Config.Global.ReportUrl + "/report?".GlueGetList(new Dictionary<string, object>
 			{
 				{
 					"deviceid",
@@ -40,7 +41,9 @@ namespace Yandex.Metrica
 					"uuid",
 					Critical.GetUuid()
 				}
-			}, false) + package.UrlParameters), new MemoryStream(package.GetRawStream().ToArray()));
+			}, false) + package.UrlParameters);
+			MetricaTrace.Write("REPORT request: " + uri.GetLeftPart(UriPartial.Path) + ", bytes=" + package.Length + ", events=" + package.EventTypes);
+			return await PostAsync(uri, new MemoryStream(package.GetRawStream().ToArray()));
 		}
 
 		public static async Task<bool> RefreshStartupAsync()
@@ -81,19 +84,22 @@ namespace Yandex.Metrica
 					}
 				}, CancellationToken.None))
 				{
+					string responseBody = await response.Content.ReadAsStringAsync();
+					MetricaTrace.Write("REPORT response: " + ((int)response.StatusCode) + " " + response.ReasonPhrase + ", body=" + responseBody);
 					if (response.IsSuccessStatusCode)
 					{
 						return response;
 					}
-					if (await response.Content.ReadAsStringAsync() == "Incorrect uuid")
+					if (responseBody == "Incorrect uuid")
 					{
 						Critical.SetUuid(null);
 					}
 					return response;
 				}
 			}
-			catch (Exception)
+			catch (Exception exception)
 			{
+				MetricaTrace.Write("REPORT exception: " + exception);
 				return null;
 			}
 		}
@@ -110,6 +116,7 @@ namespace Yandex.Metrica
 				}
 				text = text + "&deviceid=" + Critical.GetDeviceId();
 				Uri requestUri = new Uri(baseUri, text);
+				MetricaTrace.Write("STARTUP request: " + requestUri.GetLeftPart(UriPartial.Path));
 				using (HttpResponseMessage response = await new HttpClient
 				{
 					DefaultRequestHeaders = 
@@ -122,12 +129,13 @@ namespace Yandex.Metrica
 					}
 				}.GetAsync(requestUri, CancellationToken.None))
 				{
+					string responseBody = await response.Content.ReadAsStringAsync();
+					MetricaTrace.Write("STARTUP response: " + ((int)response.StatusCode) + " " + response.ReasonPhrase + ", body=" + responseBody);
 					if (!response.IsSuccessStatusCode)
 					{
-						await response.Content.ReadAsStringAsync();
 						return null;
 					}
-					using (Stream stream = await response.Content.ReadAsStreamAsync())
+					using (Stream stream = new MemoryStream(Encoding.UTF8.GetBytes(responseBody)))
 					{
 						StartupResponse startupResponse = ((stream == null) ? null : (new DataContractJsonSerializer(typeof(StartupResponse)).ReadObject(stream) as StartupResponse));
 						if (startupResponse == null)
@@ -140,8 +148,9 @@ namespace Yandex.Metrica
 					}
 				}
 			}
-			catch (Exception)
+			catch (Exception exception)
 			{
+				MetricaTrace.Write("STARTUP exception: " + exception);
 				return null;
 			}
 		}
