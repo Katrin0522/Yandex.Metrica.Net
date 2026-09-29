@@ -115,6 +115,11 @@ namespace Yandex.Metrica
 
 		public bool? Flush()
 		{
+			return Flush(true);
+		}
+
+		internal bool? Flush(bool sendPackages)
+		{
 			if (CompletedSessions.Count == 0 && ActiveSession.events.Count == 0 && ReportPackages.Count == 0)
 			{
 				return null;
@@ -135,10 +140,10 @@ namespace Yandex.Metrica
 					LastEventType = activeSession.LastEventType
 				};
 			}
-			return FlushCompletedSessions(activeSession);
+			return FlushCompletedSessions(activeSession, sendPackages);
 		}
 
-		private bool? FlushCompletedSessions(SessionModel sourceSession)
+		private bool? FlushCompletedSessions(SessionModel sourceSession, bool sendPackages)
 		{
 			lock (CompletedSessions)
 			{
@@ -151,7 +156,7 @@ namespace Yandex.Metrica
 					string reportParameters = "".GlueGetList(await ServiceData.GetReportParameters());
 					s.ReportParameters = reportParameters;
 				});
-				List<SessionModel> list = CompletedSessions.Where((SessionModel s) => !s.AsyncLocationLock).ToList();
+				List<SessionModel> list = CompletedSessions.Where((SessionModel s) => !s.AsyncLocationLock && (sendPackages || s.ReportParameters != null)).ToList();
 				List<ReportPackage> collection = list.ToReportPackages();
 				ReportPackages.AddRange(collection);
 				list.ForEach((SessionModel s) =>
@@ -162,13 +167,16 @@ namespace Yandex.Metrica
 				{
 					return false;
 				}
-				ReportPackage[] array = ReportPackages.ToArray();
-				foreach (ReportPackage reportPackage in array)
+				if (sendPackages)
 				{
-					if (!Config.Global.OfflineMode && TryPostOrIgnore(reportPackage))
+					ReportPackage[] array = ReportPackages.ToArray();
+					foreach (ReportPackage reportPackage in array)
 					{
-						ReportPackages.Remove(reportPackage);
-						reportPackage.Fade();
+						if (!Config.Global.OfflineMode && TryPostOrIgnore(reportPackage))
+						{
+							ReportPackages.Remove(reportPackage);
+							reportPackage.Fade();
+						}
 					}
 				}
 				RemoveOverflowedPackages(ReportPackages);

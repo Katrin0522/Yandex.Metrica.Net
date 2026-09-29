@@ -303,20 +303,20 @@ namespace Yandex.Metrica
 
 		public static void Snapshot()
 		{
-			if (_liteMetricaService == null)
+			LiteMetricaService liteMetricaService = _liteMetricaService;
+			if (liteMetricaService == null)
 			{
-				int num = 0;
-				while (_liteMetricaService == null && num < 7)
-				{
-					TaskEx.Delay(TimeSpan.FromMilliseconds(250.0)).Wait();
-					num++;
-				}
+				return;
 			}
-			if (_liteMetricaService != null)
+			try
 			{
-				_liteMetricaService.Lull();
-				_liteMetricaService.ForceSend = true;
-				_liteMetricaService.Flush();
+				liteMetricaService.Lull();
+				liteMetricaService.ForceSend = true;
+				liteMetricaService.Flush(false);
+				Store.Snapshot();
+			}
+			catch (Exception)
+			{
 			}
 		}
 
