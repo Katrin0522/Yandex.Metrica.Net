@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net45</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>Yandex.Metrica.NET</AssemblyName>
+    <RootNamespace>Yandex.Metrica.NET</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <LangVersion>6</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Enables reproducible builds when the .NET Framework 4.5 Developer Pack is not installed. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Management" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+</Project>
