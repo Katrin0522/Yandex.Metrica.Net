@@ -312,8 +312,6 @@ namespace Yandex.Metrica
 			{
 				liteMetricaService.Lull();
 				liteMetricaService.ForceSend = true;
-				liteMetricaService.Flush(false);
-				Store.Snapshot();
 			}
 			catch (Exception)
 			{
