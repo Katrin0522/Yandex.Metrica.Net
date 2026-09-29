@@ -1,5 +1,6 @@
 using System;
 using System.Management;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Yandex.Metrica.Aides;
 using Yandex.Metrica.Models;
@@ -70,33 +71,53 @@ namespace Yandex.Metrica.Providers
 		private static void FillDisplayProperties(DeviceProperties deviceProperties)
 		{
 			deviceProperties.ScaleFactor = 1f;
-			using (ManagementObjectCollection.ManagementObjectEnumerator managementObjectEnumerator = new ManagementObjectSearcher(new ManagementScope("\\\\.\\ROOT\\cimv2"), new ObjectQuery("SELECT * FROM CIM_VideoController")).Get().GetEnumerator())
+			try
 			{
-				if (!managementObjectEnumerator.MoveNext())
+				using (ManagementObjectCollection.ManagementObjectEnumerator managementObjectEnumerator = new ManagementObjectSearcher(new ManagementScope("\\\\.\\ROOT\\cimv2"), new ObjectQuery("SELECT * FROM CIM_VideoController")).Get().GetEnumerator())
 				{
-					return;
-				}
-				foreach (PropertyData property in managementObjectEnumerator.Current.Properties)
-				{
-					object value = property.Value;
-					if (value == null)
+					if (managementObjectEnumerator.MoveNext())
 					{
-						continue;
-					}
-					string name = property.Name;
-					if (!(name == "CurrentHorizontalResolution"))
-					{
-						if (name == "CurrentVerticalResolution")
+						foreach (PropertyData property in managementObjectEnumerator.Current.Properties)
 						{
-							deviceProperties.ScreenHeight = (uint)value;
+							object value = property.Value;
+							if (value == null)
+							{
+								continue;
+							}
+							if (property.Name == "CurrentHorizontalResolution")
+							{
+								deviceProperties.ScreenWidth = Convert.ToUInt32(value);
+							}
+							else if (property.Name == "CurrentVerticalResolution")
+							{
+								deviceProperties.ScreenHeight = Convert.ToUInt32(value);
+							}
 						}
-					}
-					else
-					{
-						deviceProperties.ScreenWidth = (uint)value;
 					}
 				}
 			}
+			catch (Exception)
+			{
+			}
+			if (deviceProperties.ScreenWidth == 0U || deviceProperties.ScreenHeight == 0U)
+			{
+				try
+				{
+					int width = GetSystemMetrics(0);
+					int height = GetSystemMetrics(1);
+					if (width > 0 && height > 0)
+					{
+						deviceProperties.ScreenWidth = (uint)width;
+						deviceProperties.ScreenHeight = (uint)height;
+					}
+				}
+				catch (Exception)
+				{
+				}
+			}
 		}
+
+		[DllImport("user32.dll")]
+		private static extern int GetSystemMetrics(int systemMetric);
 	}
 }
